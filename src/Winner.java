@@ -3,4 +3,5 @@ interface Winner {
     int getWinnerAge();
     String getWinnerName();
     String getFilmTitle();
+    boolean isNull();
 }

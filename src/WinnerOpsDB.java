@@ -32,18 +32,16 @@ public class WinnerOpsDB {
     public static Stream<Winner> loadData (String[] paths) {
 
         ArrayList dataBuilder = new ArrayList();
+
         Stream.of(paths).forEach(p -> {
-            Stream<String> lines = null;
             try {
-                lines = Files.lines(Paths.get(p));
-            } catch (IOException ignored) {}
-            if (lines != null) {
-                lines.skip(1).forEach(dataBuilder::add);
+                Files.lines(Paths.get(p)).skip(1).forEach(dataBuilder::add);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         });
 
-
-    return dataBuilder.stream().skip(1).map(s -> new WinnerImpl(s.toString().split((("(\\D)?([^\"(\\w)\\s\"$]+)")))));
+    return dataBuilder.parallelStream().map(s -> WinnerImpl.Build((s.toString())));
     }
 
     /**
@@ -52,7 +50,7 @@ public class WinnerOpsDB {
      * younger than 35 ordered alphabetically by names.
      */
     public static Stream<Winner> youngWinners (Stream<Winner> winners){
-        return winners.filter(winner -> winner.getWinnerAge() < 35)
+        return winners.filter(winner -> !winner.isNull() && winner.getWinnerAge() < 35)
                 .sorted(Comparator.comparing(Winner::getWinnerName));
     }
 
@@ -63,16 +61,16 @@ public class WinnerOpsDB {
      */
     public static Stream<Winner> extremeWinners (Stream<Winner> winners){
         @SuppressWarnings("ConstantConditions")
-        Integer minAge = winners.map(Winner::getWinnerAge).min(Comparator.comparing(Integer::intValue)).get();
+        Integer minAge = winners.filter(winner -> !winner.isNull()).map(Winner::getWinnerAge).min(Comparator.comparing(Integer::intValue)).get();
         @SuppressWarnings("ConstantConditions")
-        Integer maxAge = winners.map(Winner::getWinnerAge).max(Comparator.comparing(Integer::intValue)).get();
+        Integer maxAge = winners.filter(winner -> !winner.isNull()).map(Winner::getWinnerAge).max(Comparator.comparing(Integer::intValue)).get();
 
         return Stream.concat(
                 winners
-                .filter(w -> w.getWinnerAge() == minAge)
+                .filter(w -> !w.isNull() && w.getWinnerAge() == minAge)
                 .limit(1),
                 winners
-                .filter(w -> w.getWinnerAge() == maxAge)
+                .filter(w -> !w.isNull() && w.getWinnerAge() == maxAge)
                 .limit(1))
                 .sorted(Comparator.comparing(Winner::getWinnerName));
     }
@@ -85,6 +83,7 @@ public class WinnerOpsDB {
      */
     public static Stream<String> multiAwardedPerson (Stream<Winner> winners){
         return winners
+                .filter(winner -> !winner.isNull())
                 .collect(groupingBy(Winner::getWinnerName, counting()))
                 .entrySet()
                 .stream()
@@ -101,6 +100,7 @@ public class WinnerOpsDB {
      */
     public static Stream<String> multiAwardedFilm (Stream<Winner> winners) {
         return winners
+                .filter(winner -> !winner.isNull())
                 .collect(groupingBy(Winner::getFilmTitle, LinkedHashMap::new, counting()))
                 .entrySet()
                 .stream()
