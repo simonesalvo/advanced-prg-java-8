@@ -23,7 +23,6 @@ public class WinnerOpsDBTest {
         Stream<Winner> result = WinnerOpsDB.loadData(pathString);
 
         assert result != null;
-
         //WinnerPrinter(result);
 
         return result;
@@ -35,7 +34,8 @@ public class WinnerOpsDBTest {
         Stream<Winner> winnerStream = this.loadData();
         Stream<Winner> youngWinners = WinnerOpsDB.youngWinners(winnerStream);
         assert  youngWinners != null;
-        youngWinners.forEach(winner -> System.out.println("Winner name" + winner.getWinnerName() + ", Age: " + winner.getWinnerAge()));
+        youngWinners.sequential()
+                .forEach(winner -> System.out.println("Winner name " + winner.getWinnerName() + ", Age: " + winner.getWinnerAge()));
 
     }
 
@@ -45,7 +45,8 @@ public class WinnerOpsDBTest {
         Stream<Winner> winnerStream = this.loadData();
         Stream<Winner> extremeWinners = WinnerOpsDB.extremeWinners(winnerStream);
         assert  extremeWinners != null;
-        extremeWinners.forEach(winner -> System.out.println("Winner name" + winner.getWinnerName() + ", Age: " + winner.getWinnerAge()));
+        extremeWinners.sequential()
+                .forEach(winner -> System.out.println("Winner name " + winner.getWinnerName() + ", Age: " + winner.getWinnerAge()));
 
     }
 
@@ -75,6 +76,10 @@ public class WinnerOpsDBTest {
 
     @Test
     void comparison() {
+        Stream<Winner> winnerStream = this.loadData();
+        Long[] timeComparison = WinnerOpsDB.comparison(winnerStream);
+        assert timeComparison != null;
+        Stream.of(timeComparison).peek(System.out::println);
     }
 
     @Test
@@ -83,7 +88,6 @@ public class WinnerOpsDBTest {
         Stream<Winner> youngWinners = WinnerOpsDB.youngWinnersParallel(winnerStream);
         assert  youngWinners != null;
         youngWinners.forEach(winner -> System.out.println("Winner name" + winner.getWinnerName() + ", Age: " + winner.getWinnerAge()));
-
     }
 
 

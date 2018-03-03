@@ -2,11 +2,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 
@@ -60,21 +63,28 @@ public class WinnerOpsDB {
      * one among the youngest and one among the oldest, ordered alphabetically by names.
      */
     public static Stream<Winner> extremeWinners (Stream<Winner> winners){
-        @SuppressWarnings("ConstantConditions")
-        Integer minAge = winners.filter(winner -> !winner.isNull()).map(Winner::getWinnerAge).min(Comparator.comparing(Integer::intValue)).get();
-        @SuppressWarnings("ConstantConditions")
-        Integer maxAge = winners.filter(winner -> !winner.isNull()).map(Winner::getWinnerAge).max(Comparator.comparing(Integer::intValue)).get();
 
-        return Stream.concat(
-                winners
-                .filter(w -> !w.isNull() && w.getWinnerAge() == minAge)
-                .limit(1),
-                winners
-                .filter(w -> !w.isNull() && w.getWinnerAge() == maxAge)
-                .limit(1))
+        List<Winner> streamList = new ArrayList<>();
+
+        IntSummaryStatistics intSummaryStatistics = winners
+                .filter(winner -> !winner.isNull())
+                .peek(streamList::add)
+                .mapToInt(Winner::getWinnerAge).summaryStatistics();
+
+
+        return streamList.stream()
+                .filter(winner -> winner.getWinnerAge() == intSummaryStatistics.getMin() || winner.getWinnerAge() == intSummaryStatistics.getMax())
+                .filter(distinctByKey(Winner::getWinnerAge))
+                .limit(2)
                 .sorted(Comparator.comparing(Winner::getWinnerName));
+
+
     }
 
+    private static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
+        Set<Object> seen = ConcurrentHashMap.newKeySet();
+        return t -> seen.add(keyExtractor.apply(t));
+    }
 
     /**
      * Exercise 4
@@ -141,7 +151,7 @@ public class WinnerOpsDB {
      * Note: You can decide whether to use method runJobs or not, when writing method comparison.
      * In both cases justify your choice.
      */
-    public Long[] comparison (Stream<Winner> winners){
+    public static Long[] comparison (Stream<Winner> winners){
         Long[] times = new Long[11];
         Arrays.fill(times, Long.MAX_VALUE);
 
@@ -175,7 +185,7 @@ public class WinnerOpsDB {
         return winners
                 .parallel()
                 .filter(winner -> winner.getWinnerAge() < 35)
-                .sorted(Comparator.comparing(Winner::getWinnerName));
+                .sorted(comparing(Winner::getWinnerName));
     }
 
     /**
@@ -184,20 +194,20 @@ public class WinnerOpsDB {
      * one among the youngest and one among the oldest, ordered alphabetically by names.
      */
     public static Stream<Winner> extremeWinnersParallel (Stream<Winner> winners){
-        @SuppressWarnings("ConstantConditions")
-        Integer minAge = winners.parallel().map(Winner::getWinnerAge).min(Comparator.comparing(Integer::intValue)).get();
-        @SuppressWarnings("ConstantConditions")
-        Integer maxAge = winners.parallel().map(Winner::getWinnerAge).max(Comparator.comparing(Integer::intValue)).get();
+        List<Winner> streamList = new ArrayList<>();
 
-        return Stream.concat(
-                winners
+        IntSummaryStatistics intSummaryStatistics = winners
                 .parallel()
-                .filter(w -> w.getWinnerAge() == minAge)
-                .limit(1),
-                winners
+                .filter(winner -> !winner.isNull())
+                .peek(streamList::add)
+                .mapToInt(Winner::getWinnerAge).summaryStatistics();
+
+
+        return streamList.stream()
                 .parallel()
-                .filter(w -> w.getWinnerAge() == maxAge)
-                .limit(1))
+                .filter(winner -> winner.getWinnerAge() == intSummaryStatistics.getMin() || winner.getWinnerAge() == intSummaryStatistics.getMax())
+                .filter(distinctByKey(Winner::getWinnerAge))
+                .limit(2)
                 .sorted(Comparator.comparing(Winner::getWinnerName));
 
     }
