@@ -5,13 +5,13 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static java.util.Comparator.comparing;
-import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.*;
 
 /**
  * Created by Simone Salvo on 17/01/2018.
@@ -126,7 +126,6 @@ public class WinnerOpsDB {
      */
     public static <T,U> long measure (Function<Stream<T>,Stream<U>> f, Stream<T> s1){
         long startTime = System.nanoTime();
-        //noinspection ResultOfMethodCallIgnored
         f.apply(s1).collect(Collectors.toList());
         long endTime = System.nanoTime();
         return (endTime - startTime);
@@ -138,8 +137,10 @@ public class WinnerOpsDB {
      * of the times required to run each job by invoking measure
      */
     public static <T,U> LongStream runJobs (Stream<Function<Stream<T>, Stream<U>>> jobs, Stream<T> s){
+        List<T> tList = s.collect(toList());
+        Supplier<Stream<T>> sup = () -> tList.stream();
         return jobs
-                .map(f -> measure(f,s))
+                .map(f -> measure(f,sup.get()))
                 .mapToLong(Long::longValue);
     }
 
