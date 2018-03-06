@@ -138,7 +138,7 @@ public class WinnerOpsDB {
      */
     public static <T,U> LongStream runJobs (Stream<Function<Stream<T>, Stream<U>>> jobs, Stream<T> s){
         List<T> tList = s.collect(toList());
-        Supplier<Stream<T>> sup = () -> tList.stream();
+        Supplier<Stream<T>> sup = tList::stream;
         return jobs
                 .map(f -> measure(f,sup.get()))
                 .mapToLong(Long::longValue);
@@ -164,9 +164,15 @@ public class WinnerOpsDB {
                 WinnerOpsDB::multiAwardedFilm,
                 WinnerOpsDB::multiAwardedPerson);
 
-        Long[] longs = Stream.of(runJobs(first_functions_blocks, winners).toArray(),
-                        runJobs(second_functions_blocks, winners).toArray())
-                        .flatMap(Stream::of).toArray(Long[]::new);
+        List<Winner> tList = winners.collect(toList());
+        Supplier<Stream<Winner>> sup = tList::stream;
+
+        long[] first_functions_blocks_array = runJobs(first_functions_blocks, sup.get()).toArray();
+        long[] second_functions_blocks_array = runJobs(second_functions_blocks, sup.get()).toArray();
+
+        long[] longs = new long[first_functions_blocks_array.length + second_functions_blocks_array.length];
+        System.arraycopy(first_functions_blocks_array, 0, longs, 0, first_functions_blocks_array.length);
+        System.arraycopy(second_functions_blocks_array, 0, longs, first_functions_blocks_array.length, second_functions_blocks_array.length);
 
         for (int i = 0, currentIndex = 2, skipIndex = 6; i < longs.length ; i++, currentIndex++) {
             if (currentIndex == skipIndex)
@@ -185,7 +191,7 @@ public class WinnerOpsDB {
     public static Stream<Winner> youngWinnersParallel (Stream<Winner> winners){
         return winners
                 .parallel()
-                .filter(winner -> winner.getWinnerAge() < 35)
+                .filter(winner -> !winner.isNull() && winner.getWinnerAge() < 35)
                 .sorted(comparing(Winner::getWinnerName));
     }
 
@@ -202,7 +208,6 @@ public class WinnerOpsDB {
                 .filter(winner -> !winner.isNull())
                 .peek(streamList::add)
                 .mapToInt(Winner::getWinnerAge).summaryStatistics();
-
 
         return streamList.stream()
                 .parallel()
@@ -221,6 +226,7 @@ public class WinnerOpsDB {
     public static Stream<String> multiAwardedPersonParallel (Stream<Winner> winners){
         return winners
                 .parallel()
+                .filter(winner -> !winner.isNull())
                 .collect(groupingBy(Winner::getWinnerName, counting()))
                 .entrySet()
                 .parallelStream()
@@ -238,10 +244,12 @@ public class WinnerOpsDB {
     public static Stream<String> multiAwardedFilmParallel (Stream<Winner> winners){
         return winners
                 .parallel()
+                .filter(winner -> !winner.isNull())
                 .collect(groupingBy(Winner::getFilmTitle, LinkedHashMap::new, counting()))
                 .entrySet()
                 .parallelStream()
                 .filter(e -> e.getValue() == 2)
-                .map(Map.Entry::getKey);
+                .map(Map.Entry::getKey)
+                .sorted();
     }
 }
