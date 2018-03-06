@@ -1,14 +1,14 @@
-#Java 8 Features
+# Java 8 Features
 
 
 The following exercises require using the files oscar_age_female.csv and oscar_age_male.csv that store information about the winners of the Oscar prize. These are text files where each line is a record storing the following fields in csv format:
 Index, Year, Age, Name, Movie
 where the field Year denotes the year when the Oscar was won, and Age the age the winners had when they were awarded. The other fields are self-explanatory.
 Solution format: implement all the required methods below in a file WinnerOpsDB.java, adequately commented.
-##Exercise 1
+## Exercise 1
 
 Write your own class that implements the provided interface Winner that represents a record of the winner database. Then, write a static method loadData that given a String[] containing the paths of winners databases returns a Stream<Winner> representing the content of the databases. Note that the first line of each file describes the format of the fields and that the values of fields Name and Movie are enclosed in double quotes, e.g., "Coquette". Your solution must opportunely deal with these cases.
-##Exercise 2
+## Exercise 2
 
 Implement a static method youngWinners that given a Stream<Winner> returns a new Stream<Winner> containing the winners that are younger than 35 ordered alphabetically by names.
 ##Exercise 3
