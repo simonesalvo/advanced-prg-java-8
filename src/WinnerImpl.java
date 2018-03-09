@@ -10,10 +10,6 @@ public class WinnerImpl implements Winner {
     private String winnerName;
     private String filmTitle;
 
-    public WinnerImpl() {
-
-    }
-
     @Override
     public int getYear() {
         return this.year;

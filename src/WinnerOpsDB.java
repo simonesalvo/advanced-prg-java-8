@@ -22,10 +22,6 @@ public class WinnerOpsDB {
     public static void main(String[] args) {
     }
 
-    WinnerOpsDB(){
-
-    }
-
     /**
      * Exercise 1
      * Return the database rows as Stream of Winner.
@@ -211,7 +207,8 @@ public class WinnerOpsDB {
 
         return streamList.stream()
                 .parallel()
-                .filter(winner -> winner.getWinnerAge() == intSummaryStatistics.getMin() || winner.getWinnerAge() == intSummaryStatistics.getMax())
+                .filter(winner -> !winner.isNull())
+                .filter(winner ->  (winner.getWinnerAge() == intSummaryStatistics.getMin() || winner.getWinnerAge() == intSummaryStatistics.getMax()))
                 .filter(distinctByKey(Winner::getWinnerAge))
                 .limit(2)
                 .sorted(Comparator.comparing(Winner::getWinnerName));
